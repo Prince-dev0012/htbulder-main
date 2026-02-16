@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI Website Builder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1f2937; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #3b82f6; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #2563eb; 
+        }
+
+        /* Syntax Highlighting Mockup */
+        .code-block {
+            font-family: 'Courier New', Courier, monospace;
+            white-space: pre-wrap;
+        }
+
+        /* Mobile Layout Fixes */
+        body {
+            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background-color: #111827; /* gray-900 */
+            color: white;
+        }
+
+        /* Sidebar Transition */
+        #sidebar {
+            transition: transform 0.3s ease-in-out;
+        }
+        
+        /* Loader */
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 3px solid #3b82f6;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="text-gray-100 font-sans">
+
+    <div id="app" class="flex flex-col h-[100dvh] w-full">
+
+        <header class="flex-shrink-0 h-14 bg-gray-800 border-b border-gray-700 flex items-center justify-between px-4 z-20">
+            <div class="flex items-center gap-4">
+                <button id="menu-btn" class="text-gray-400 hover:text-white focus:outline-none md:hidden">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                </button>
+                
+                <div class="flex items-center gap-2">
+                    <button id="btn-reset" title="Reset Project" class="w-3 h-3 rounded-full bg-red-500 hover:bg-red-400 transition"></button>
+                    <button id="btn-clear-preview" title="Clear Preview" class="w-3 h-3 rounded-full bg-yellow-500 hover:bg-yellow-400 transition"></button>
+                    <button id="btn-run-preview" title="Run Preview" class="w-3 h-3 rounded-full bg-green-500 hover:bg-green-400 transition"></button>
+                </div>
+                <span class="hidden md:block font-bold text-sm tracking-wide text-gray-300">AI BUILDER</span>
+            </div>
+
+            <div class="flex bg-gray-900 rounded-lg p-1">
+                <button id="toggle-builder" class="px-3 py-1 text-xs font-medium rounded bg-blue-600 text-white transition">Builder</button>
+                <button id="toggle-preview" class="px-3 py-1 text-xs font-medium rounded text-gray-400 hover:text-white transition">Preview</button>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button id="btn-download" class="p-1.5 text-gray-400 hover:text-white transition" title="Download HTML">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                </button>
+                <button id="btn-settings-open" class="p-1.5 text-gray-400 hover:text-white transition" title="Settings">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                </button>
+            </div>
+        </header>
+
+        <div class="flex flex-1 overflow-hidden relative">
+            
+            <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-30 hidden md:hidden glass"></div>
+
+            <aside id="sidebar" class="absolute md:relative z-40 w-64 h-full bg-gray-900 border-r border-gray-700 transform -translate-x-full md:translate-x-0 flex flex-col">
+                <div class="p-4 border-b border-gray-800 flex justify-between items-center">
+                    <h2 class="text-sm font-semibold text-gray-400">PROJECTS</h2>
+                    <button id="btn-new-project" class="text-blue-400 hover:text-blue-300 text-xs font-bold">+ NEW</button>
+                </div>
+                <div id="project-list" class="flex-1 overflow-y-auto p-2 space-y-1">
+                    </div>
+                <div class="p-4 border-t border-gray-800 text-xs text-center text-gray-500">
+                    v1.0.0
+                </div>
+            </aside>
+
+            <main class="flex-1 flex flex-col relative w-full bg-gray-800">
+                
+                <div id="view-builder" class="flex flex-col h-full w-full">
+                    <div class="flex-shrink-0 h-10 bg-gray-800 border-b border-gray-700 flex items-center px-4 gap-4">
+                        <button id="tab-chat" class="text-sm font-medium text-blue-400 border-b-2 border-blue-400 h-full px-2">Chat</button>
+                        <button id="tab-code" class="text-sm font-medium text-gray-400 hover:text-white h-full px-2">Code</button>
+                        <div class="flex-1"></div>
+                        <span id="status-indicator" class="text-xs text-gray-500 hidden">Generating...</span>
+                    </div>
+
+                    <div id="panel-chat" class="flex-1 overflow-y-auto p-4 space-y-4">
+                        <div class="text-center text-gray-500 mt-10 text-sm">
+                            <p>Start by describing your website...</p>
+                        </div>
+                    </div>
+
+                    <div id="panel-code" class="hidden flex-1 relative bg-[#0d1117] overflow-hidden">
+                        <textarea id="code-editor" class="w-full h-full bg-transparent text-gray-300 font-mono text-sm p-4 resize-none focus:outline-none" spellcheck="false"></textarea>
+                        <button id="btn-copy-code" class="absolute top-4 right-4 bg-gray-700 hover:bg-gray-600 text-xs px-2 py-1 rounded">Copy</button>
+                    </div>
+
+                    <div class="flex-shrink-0 p-4 bg-gray-900 border-t border-gray-700">
+                        <div class="relative flex items-end gap-2 bg-gray-800 rounded-lg p-2 border border-gray-700 focus-within:border-blue-500">
+                            <textarea id="chat-input" rows="1" class="w-full bg-transparent border-none text-white focus:ring-0 resize-none max-h-32 py-2" placeholder="Describe the website update..."></textarea>
+                            <button id="btn-send" class="p-2 bg-blue-600 hover:bg-blue-500 rounded-md text-white flex-shrink-0 transition">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                            </button>
+                            <button id="btn-stop" class="hidden p-2 bg-red-600 hover:bg-red-500 rounded-md text-white flex-shrink-0 transition">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="view-preview" class="hidden flex-col h-full w-full bg-white relative">
+                    <iframe id="preview-frame" class="w-full h-full border-none" sandbox="allow-scripts allow-modals allow-same-origin"></iframe>
+                    <div id="console-log" class="absolute bottom-0 left-0 right-0 h-32 bg-black/90 text-red-400 font-mono text-xs p-2 overflow-auto hidden border-t border-gray-600"></div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="settings-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 hidden">
+        <div class="bg-gray-800 w-full max-w-md rounded-lg shadow-xl border border-gray-700 flex flex-col max-h-[90vh]">
+            <div class="p-4 border-b border-gray-700 flex justify-between items-center">
+                <h3 class="font-bold text-white">Settings</h3>
+                <button id="btn-settings-close" class="text-gray-400 hover:text-white">&times;</button>
+            </div>
+            <div class="p-4 overflow-y-auto flex-1 space-y-4">
+                
+                <div>
+                    <label class="block text-xs font-medium text-gray-400 mb-1">API URL (OpenRouter)</label>
+                    <input type="text" id="setting-url" class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-sm text-gray-300 focus:border-blue-500 focus:outline-none" value="https://openrouter.ai/api/v1/chat/completions" readonly>
+                    <p class="text-[10px] text-gray-500 mt-1">Forced to OpenRouter for this build.</p>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-gray-400 mb-1">OpenRouter API Key</label>
+                    <input type="password" id="setting-key" class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-sm text-gray-300 focus:border-blue-500 focus:outline-none" placeholder="sk-or-...">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-gray-400 mb-1">Model ID</label>
+                    <input type="text" id="setting-model" class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-sm text-gray-300 focus:border-blue-500 focus:outline-none" value="google/gemini-2.0-flash-lite-preview-02-05:free">
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-300">Auto-Apply Code</span>
+                    <input type="checkbox" id="setting-auto-apply" class="accent-blue-500" checked>
+                </div>
+
+                <button id="btn-test-api" class="w-full py-2 bg-gray-700 hover:bg-gray-600 rounded text-sm font-medium transition">Test API Connection</button>
+            </div>
+            <div class="p-4 border-t border-gray-700">
+                <button id="btn-save-settings" class="w-full py-2 bg-blue-600 hover:bg-blue-500 rounded text-sm font-bold text-white transition">Save & Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONSTANTS ---
+        const API_URL = "https://openrouter.ai/api/v1/chat/completions";
+        const SYSTEM_PROMPT = "You are a web developer. Output ONLY raw HTML code including <style> and <script>. Do not output markdown backticks. Do not output explanations. The code must be a complete single file solution.";
+
+        // --- STATE ---
+        let state = {
+            projects: [],
+            currentProjectId: null,
+            settings: {
+                apiKey: "",
+                model: "google/gemini-2.0-flash-lite-preview-02-05:free",
+                autoApply: true
+            },
+            isGenerating: false,
+            abortController: null
+        };
+
+        // --- DOM ELEMENTS ---
+        const dom = {
+            app: document.getElementById('app'),
+            sidebar: document.getElementById('sidebar'),
+            overlay: document.getElementById('sidebar-overlay'),
+            menuBtn: document.getElementById('menu-btn'),
+            projectList: document.getElementById('project-list'),
+            newProjectBtn: document.getElementById('btn-new-project'),
+            
+            viewBuilder: document.getElementById('view-builder'),
+            viewPreview: document.getElementById('view-preview'),
+            toggleBuilder: document.getElementById('toggle-builder'),
+            togglePreview: document.getElementById('toggle-preview'),
+            
+            tabChat: document.getElementById('tab-chat'),
+            tabCode: document.getElementById('tab-code'),
+            panelChat: document.getElementById('panel-chat'),
+            panelCode: document.getElementById('panel-code'),
+            
+            chatInput: document.getElementById('chat-input'),
+            sendBtn: document.getElementById('btn-send'),
+            stopBtn: document.getElementById('btn-stop'),
+            status: document.getElementById('status-indicator'),
+            
+            codeEditor: document.getElementById('code-editor'),
+            copyCodeBtn: document.getElementById('btn-copy-code'),
+            
+            previewFrame: document.getElementById('preview-frame'),
+            consoleLog: document.getElementById('console-log'),
+            
+            settingsModal: document.getElementById('settings-modal'),
+            settingsOpen: document.getElementById('btn-settings-open'),
+            settingsClose: document.getElementById('btn-settings-close'),
+            settingKey: document.getElementById('setting-key'),
+            settingModel: document.getElementById('setting-model'),
+            settingAutoApply: document.getElementById('setting-auto-apply'),
+            saveSettingsBtn: document.getElementById('btn-save-settings'),
+            testApiBtn: document.getElementById('btn-test-api'),
+
+            trafficReset: document.getElementById('btn-reset'),
+            trafficClear: document.getElementById('btn-clear-preview'),
+            trafficRun: document.getElementById('btn-run-preview'),
+            downloadBtn: document.getElementById('btn-download')
+        };
+
+        // --- INITIALIZATION ---
+        function init() {
+            loadState();
+            renderProjects();
+            if (state.projects.length === 0) createNewProject();
+            else if (state.currentProjectId) loadProject(state.currentProjectId);
+            
+            setupEventListeners();
+        }
+
+        // --- STATE MANAGEMENT ---
+        function loadState() {
+            const saved = localStorage.getItem('ai-builder-state');
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                state.projects = parsed.projects || [];
+                state.currentProjectId = parsed.currentProjectId;
+                state.settings = { ...state.settings, ...(parsed.settings || {}) };
+            }
+            // Populate settings inputs
+            dom.settingKey.value = state.settings.apiKey;
+            dom.settingModel.value = state.settings.model;
+            dom.settingAutoApply.checked = state.settings.autoApply;
+        }
+
+        function saveState() {
+            localStorage.setItem('ai-builder-state', JSON.stringify({
+                projects: state.projects,
+                currentProjectId: state.currentProjectId,
+                settings: state.settings
+            }));
+        }
+
+        function getCurrentProject() {
+            return state.projects.find(p => p.id === state.currentProjectId);
+        }
+
+        // --- PROJECTS ---
+        function createNewProject() {
+            const id = Date.now().toString();
+            const project = {
+                id,
+                name: `Project ${state.projects.length + 1}`,
+                messages: [],
+                code: "",
+                created: Date.now()
+            };
+            state.projects.unshift(project); // Add to top
+            state.currentProjectId = id;
+            saveState();
+            renderProjects();
+            loadProject(id);
+        }
+
+        function deleteProject(id, e) {
+            e.stopPropagation();
+            if(!confirm("Delete this project?")) return;
+            state.projects = state.projects.filter(p => p.id !== id);
+            if (state.currentProjectId === id) {
+                state.currentProjectId = state.projects.length > 0 ? state.projects[0].id : null;
+            }
+            if (!state.currentProjectId && state.projects.length === 0) {
+                createNewProject(); // Ensure at least one
+            } else {
+                saveState();
+                renderProjects();
+                loadProject(state.currentProjectId);
+            }
+        }
+
+        function loadProject(id) {
+            state.currentProjectId = id;
+            const project = getCurrentProject();
+            if (!project) return;
+
+            // Clear Chat UI
+            dom.panelChat.innerHTML = '';
+            
+            // Render Messages
+            project.messages.forEach(msg => appendMessageToUI(msg));
+            
+            // Set Code
+            dom.codeEditor.value = project.code;
+            
+            // Highlight active project in sidebar
+            document.querySelectorAll('.project-item').forEach(el => {
+                el.classList.remove('bg-gray-800', 'border-l-4', 'border-blue-500');
+                if(el.dataset.id === id) el.classList.add('bg-gray-800', 'border-l-4', 'border-blue-500');
+            });
+            
+            saveState();
+        }
+
+        function renderProjects() {
+            dom.projectList.innerHTML = '';
+            state.projects.forEach(p => {
+                const div = document.createElement('div');
+                div.className = `project-item p-3 cursor-pointer hover:bg-gray-800 rounded-r transition group flex justify-between items-center ${p.id === state.currentProjectId ? 'bg-gray-800 border-l-4 border-blue-500' : 'border-l-4 border-transparent'}`;
+                div.dataset.id = p.id;
+                div.onclick = () => loadProject(p.id);
+                
+                div.innerHTML = `
+                    <span class="text-sm font-medium text-gray-300 truncate max-w-[140px]">${p.name}</span>
+                    <button class="delete-btn opacity-0 group-hover:opacity-100 text-gray-500 hover:text-red-400 p-1" onclick="deleteProject('${p.id}', event)">
+                        &times;
+                    </button>
+                `;
+                dom.projectList.appendChild(div);
+            });
+        }
+
+        // --- API & CHAT ---
+        async function handleSend() {
+            const input = dom.chatInput.value.trim();
+            if (!input) return;
+            if (!state.settings.apiKey) {
+                alert("Please enter your OpenRouter API Key in Settings.");
+                dom.settingsModal.classList.remove('hidden');
+                return;
+            }
+
+            const project = getCurrentProject();
+            
+            // User Message
+            const userMsg = { role: 'user', content: input };
+            project.messages.push(userMsg);
+            appendMessageToUI(userMsg);
+            
+            dom.chatInput.value = '';
+            dom.chatInput.style.height = 'auto'; // Reset height
+            
+            setLoading(true);
+
+            // Context
+            const messages = [
+                { role: 'system', content: SYSTEM_PROMPT },
+                { role: 'user', content: `Current Code:\n${project.code}` },
+                ...project.messages
+            ];
+
+            try {
+                state.abortController = new AbortController();
+                
+                // 🚨 Anti-Crash Fetch Logic as Requested
+                const response = await fetch(API_URL, {
+                    method: "POST",
+                    headers: {
+                        "Authorization": `Bearer ${state.settings.apiKey}`,
+                        "HTTP-Referer": location.origin,
+                        "X-Title": "AI Website Builder",
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        model: state.settings.model,
+                        messages: messages
+                    }),
+                    signal: state.abortController.signal
+                });
+
+                const text = await response.text();
+
+                if (!response.ok) {
+                    throw new Error("API Error: " + text);
+                }
+
+                const data = JSON.parse(text);
+                
+                // Reflection Fix
+                const content = data.choices?.[0]?.message?.content;
+                
+                if (content) {
+                    const aiMsg = { role: 'assistant', content: content };
+                    project.messages.push(aiMsg);
+                    appendMessageToUI(aiMsg);
+                    
+                    // Extract code (Simple heuristic: look for html structure or take all if no markdown)
+                    // Removing markdown blocks if present
+                    let code = content.replace(/```html/g, '').replace(/```/g, '').trim();
+                    
+                    // Update project code
+                    project.code = code;
+                    dom.codeEditor.value = code;
+
+                    if (state.settings.autoApply) {
+                        runPreview();
+                    }
+                    saveState();
+                }
+
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    appendMessageToUI({ role: 'system', content: 'Generation stopped by user.' });
+                } else {
+                    alert(error.message);
+                }
+            } finally {
+                setLoading(false);
+                state.abortController = null;
+            }
+        }
+
+        function appendMessageToUI(msg) {
+            const div = document.createElement('div');
+            const isUser = msg.role === 'user';
+            const isSystem = msg.role === 'system';
+            
+            div.className = `flex w-full ${isUser ? 'justify-end' : 'justify-start'}`;
+            
+            const bubble = document.createElement('div');
+            bubble.className = `max-w-[85%] rounded-lg p-3 text-sm ${
+                isUser 
+                ? 'bg-blue-600 text-white rounded-br-none' 
+                : isSystem
+                ? 'bg-red-900/50 text-red-200 border border-red-800 text-xs w-full text-center'
+                : 'bg-gray-700 text-gray-200 rounded-bl-none'
+            }`;
+            
+            if (isSystem) {
+                bubble.textContent = msg.content;
+            } else {
+                bubble.innerText = msg.content; // Use innerText to preserve minimal whitespace formatting
+            }
+
+            div.appendChild(bubble);
+            dom.panelChat.appendChild(div);
+            
+            // Scroll to bottom
+            dom.panelChat.scrollTop = dom.panelChat.scrollHeight;
+        }
+
+        function setLoading(isLoading) {
+            state.isGenerating = isLoading;
+            dom.status.classList.toggle('hidden', !isLoading);
+            dom.sendBtn.classList.toggle('hidden', isLoading);
+            dom.stopBtn.classList.toggle('hidden', !isLoading);
+        }
+
+        // --- PREVIEW ---
+        function runPreview() {
+            const code = dom.codeEditor.value;
+            const blob = new Blob([code], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            dom.previewFrame.src = url;
+        }
+
+        function clearPreview() {
+             dom.previewFrame.src = "about:blank";
+        }
+
+        // --- EVENT LISTENERS ---
+        function setupEventListeners() {
+            // Sidebar Toggle (Mobile)
+            dom.menuBtn.onclick = () => {
+                dom.sidebar.classList.remove('-translate-x-full');
+                dom.overlay.classList.remove('hidden');
+            };
+            dom.overlay.onclick = () => {
+                dom.sidebar.classList.add('-translate-x-full');
+                dom.overlay.classList.add('hidden');
+            };
+
+            // New Project
+            dom.newProjectBtn.onclick = createNewProject;
+
+            // View Toggles
+            dom.toggleBuilder.onclick = () => switchView('builder');
+            dom.togglePreview.onclick = () => {
+                switchView('preview');
+                runPreview();
+            };
+
+            // Builder Tabs
+            dom.tabChat.onclick = () => switchBuilderTab('chat');
+            dom.tabCode.onclick = () => switchBuilderTab('code');
+
+            // Chat Input
+            dom.chatInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend();
+                }
+            });
+            // Auto resize textarea
+            dom.chatInput.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
+            });
+
+            dom.sendBtn.onclick = handleSend;
+            
+            dom.stopBtn.onclick = () => {
+                if (state.abortController) state.abortController.abort();
+            };
+
+            // Code Actions
+            dom.copyCodeBtn.onclick = () => {
+                navigator.clipboard.writeText(dom.codeEditor.value);
+                const originalText = dom.copyCodeBtn.innerText;
+                dom.copyCodeBtn.innerText = "Copied!";
+                setTimeout(() => dom.copyCodeBtn.innerText = originalText, 2000);
+            };
+
+            // Traffic
+            dom.trafficReset.onclick = () => {
+                if(confirm("Reset current project code and history?")) {
+                   const p = getCurrentProject();
+                   p.messages = [];
+                   p.code = "";
+                   loadProject(p.id);
+                }
+            };
+            dom.trafficClear.onclick = clearPreview;
+            dom.trafficRun.onclick = runPreview;
+
+            // Download
+            dom.downloadBtn.onclick = () => {
+                const blob = new Blob([dom.codeEditor.value], {type: "text/html"});
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = "index.html";
+                link.click();
+            };
+
+            // Settings
+            dom.settingsOpen.onclick = () => dom.settingsModal.classList.remove('hidden');
+            dom.settingsClose.onclick = () => dom.settingsModal.classList.add('hidden');
+            
+            dom.saveSettingsBtn.onclick = () => {
+                state.settings.apiKey = dom.settingKey.value.trim();
+                state.settings.model = dom.settingModel.value.trim();
+                state.settings.autoApply = dom.settingAutoApply.checked;
+                saveState();
+                dom.settingsModal.classList.add('hidden');
+            };
+
+            dom.testApiBtn.onclick = async () => {
+                const key = dom.settingKey.value.trim();
+                if(!key) return alert("Enter API Key first.");
+                try {
+                    dom.testApiBtn.innerText = "Testing...";
+                    const res = await fetch(API_URL, {
+                        method: "POST",
+                        headers: {
+                            "Authorization": `Bearer ${key}`,
+                            "HTTP-Referer": location.origin,
+                            "X-Title": "AI Website Builder",
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            model: dom.settingModel.value,
+                            messages: [{role:"user", content:"ping"}]
+                        })
+                    });
+                    if(res.ok) alert("Success! API Connected.");
+                    else alert("Error: " + await res.text());
+                } catch(e) {
+                    alert("Network Error: " + e.message);
+                } finally {
+                    dom.testApiBtn.innerText = "Test API Connection";
+                }
+            };
+        }
+
+        // --- VIEW HELPERS ---
+        function switchView(view) {
+            if (view === 'builder') {
+                dom.viewBuilder.classList.remove('hidden');
+                dom.viewBuilder.classList.add('flex');
+                dom.viewPreview.classList.add('hidden');
+                dom.viewPreview.classList.remove('flex');
+                
+                dom.toggleBuilder.classList.replace('text-gray-400', 'text-white');
+                dom.toggleBuilder.classList.replace('bg-transparent', 'bg-blue-600'); // Assuming reset
+                dom.toggleBuilder.classList.add('bg-blue-600');
+                
+                dom.togglePreview.classList.replace('text-white', 'text-gray-400');
+                dom.togglePreview.classList.remove('bg-blue-600');
+            } else {
+                dom.viewBuilder.classList.add('hidden');
+                dom.viewBuilder.classList.remove('flex');
+                dom.viewPreview.classList.remove('hidden');
+                dom.viewPreview.classList.add('flex');
+
+                dom.togglePreview.classList.replace('text-gray-400', 'text-white');
+                dom.togglePreview.classList.add('bg-blue-600');
+
+                dom.toggleBuilder.classList.replace('text-white', 'text-gray-400');
+                dom.toggleBuilder.classList.remove('bg-blue-600');
+            }
+        }
+
+        function switchBuilderTab(tab) {
+            if (tab === 'chat') {
+                dom.panelChat.classList.remove('hidden');
+                dom.panelCode.classList.add('hidden');
+                
+                dom.tabChat.classList.add('text-blue-400', 'border-b-2', 'border-blue-400');
+                dom.tabChat.classList.remove('text-gray-400');
+                
+                dom.tabCode.classList.remove('text-blue-400', 'border-b-2', 'border-blue-400');
+                dom.tabCode.classList.add('text-gray-400');
+            } else {
+                dom.panelChat.classList.add('hidden');
+                dom.panelCode.classList.remove('hidden');
+                
+                dom.tabCode.classList.add('text-blue-400', 'border-b-2', 'border-blue-400');
+                dom.tabCode.classList.remove('text-gray-400');
+                
+                dom.tabChat.classList.remove('text-blue-400', 'border-b-2', 'border-blue-400');
+                dom.tabChat.classList.add('text-gray-400');
+            }
+        }
+
+        // Run Init
+        init();
+
+    </script>
+</body>
+</html>
